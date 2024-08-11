@@ -1,0 +1,7 @@
+.navbar{
+    background: rgba(255, 255, 255, 0.2); /* white with some transparency */
+    backdrop-filter: blur(10px); /* creates the frosted glass effect */
+    border-radius: 10px; /* optional, for rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* subtle shadow for depth */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* optional, to add a border */
+    z-index: 1000; /* ensures it stays above other content */}
