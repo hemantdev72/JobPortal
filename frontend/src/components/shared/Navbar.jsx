@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User2} from "lucide-react";
 import {Link} from 'react-router-dom';
+import { useSelector } from "react-redux";
 
 function Navbar() {
-    const user=false;
+  const {user}=useSelector((store)=>store.auth);
+
 
   return (
     <div className="navbar sticky top-0 left-0">
@@ -23,9 +25,9 @@ function Navbar() {
         </div>
         <div className="flex justify-between items-center gap-16">
           <ul className="flex items-center font-medium gap-5">
-            <li>Home</li>
-            <li>Jobs</li>
-            <li>Browse</li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/jobs">Jobs</Link></li>
+            <li><Link to={"/browse"}>Browse</Link></li>
           </ul>
 
           {user?<Popover>

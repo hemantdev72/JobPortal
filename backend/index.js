@@ -14,12 +14,11 @@ app.use(express.json());
 app.use(cookieParser());
 dotenv.config();
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Your frontend URL
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true, // Allow credentials (cookies, headers, etc.)
+    credentials: true, 
 };
 
-// Apply CORS middleware
 app.use(cors(corsOptions));
 
 app.get("/home",(req,res)=>{
