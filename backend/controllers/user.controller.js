@@ -8,33 +8,46 @@ export const register = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, password, role } = req.body;
          
+        // Check for required fields
         if (!fullname || !email || !phoneNumber || !password || !role) {
             return res.status(400).json({
                 message: "Something is missing",
                 success: false
             });
         };
-        const file = req.file;
-        const fileUri = getDataUri(file);
-        const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
 
+        // Initialize profilePhoto with a default value
+        let profilePhoto = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"; // You can set a default URL here or leave it as an empty string
+
+        const file = req.file;
+        if (file) {
+            // If the file exists, process and upload it
+            const fileUri = getDataUri(file);
+            const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+            profilePhoto = cloudResponse.secure_url; // Use the uploaded image URL
+        }
+
+        // Check if user already exists
         const user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({
-                message: 'User already exist with this email.',
+                message: 'User already exists with this email.',
                 success: false,
-            })
+            });
         }
+
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Create the user with or without the profile photo
         await User.create({
             fullname,
             email,
             phoneNumber,
             password: hashedPassword,
             role,
-            profile:{
-                profilePhoto:cloudResponse.secure_url,
+            profile: {
+                profilePhoto, // Set the profile photo, either the default or uploaded URL
             }
         });
 
@@ -44,8 +57,13 @@ export const register = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false
+        });
     }
 }
+
 export const login = async (req, res) => {
     try {
         const { email, password, role } = req.body;
@@ -114,43 +132,49 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
-        
+
+        let cloudResponse;
         const file = req.file;
-        // cloudinary 
-        const fileUri = getDataUri(file);
-        const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
 
+        // Only handle resume upload if a file is provided
+        if (file) {
+            const fileUri = getDataUri(file);
+            cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+        }
 
-
+        // Split skills into an array if provided
         let skillsArray;
-        if(skills){
+        if (skills) {
             skillsArray = skills.split(",");
         }
-        const userId = req.id; // middleware authentication
+
+        const userId = req.id; // Assume this is set by authentication middleware
         let user = await User.findById(userId);
 
         if (!user) {
             return res.status(400).json({
                 message: "User not found.",
                 success: false
-            })
-        }
-        // updating data
-        if(fullname) user.fullname = fullname
-        if(email) user.email = email
-        if(phoneNumber)  user.phoneNumber = phoneNumber
-        if(bio) user.profile.bio = bio
-        if(skills) user.profile.skills = skillsArray
-      
-       
-        if(cloudResponse){
-            user.profile.resume = cloudResponse.secure_url // save the cloudinary url
-            user.profile.resumeOriginalName = file.originalname // Save the original file name
+            });
         }
 
+        // Update user data if fields are provided
+        if (fullname) user.fullname = fullname;
+        if (email) user.email = email;
+        if (phoneNumber) user.phoneNumber = phoneNumber;
+        if (bio) user.profile.bio = bio;
+        if (skills) user.profile.skills = skillsArray;
 
+        // Update resume only if a file was uploaded
+        if (cloudResponse) {
+            user.profile.resume = cloudResponse.secure_url; // Save the Cloudinary URL
+            user.profile.resumeOriginalName = file.originalname; // Save the original file name
+        }
+
+        // Save the updated user
         await user.save();
 
+        // Simplify the response object
         user = {
             _id: user._id,
             fullname: user.fullname,
@@ -158,14 +182,18 @@ export const updateProfile = async (req, res) => {
             phoneNumber: user.phoneNumber,
             role: user.role,
             profile: user.profile
-        }
+        };
 
         return res.status(200).json({
-            message:"Profile updated successfully.",
+            message: "Profile updated successfully.",
             user,
-            success:true
-        })
+            success: true
+        });
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false
+        });
     }
-}
+};
